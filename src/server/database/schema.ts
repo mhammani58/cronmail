@@ -73,7 +73,7 @@ export type Email = typeof emails.$inferSelect;
 
 export const crons = pgTable("crons", {
   id: text("id").notNull().primaryKey().$defaultFn(randomUUID),
-  cronId: text("cronId").notNull().unique(),
+  cronId: text("cronId").notNull(),
   emailId: text("emailId")
     .notNull()
     .references(() => emails.id, { onDelete: "cascade" }),
