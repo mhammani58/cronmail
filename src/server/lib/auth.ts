@@ -28,19 +28,19 @@ export const authOptions: AuthOptions = {
       },
     }),
   ],
-  //callbacks: {
-  //  signIn: async ({ user: requestUser }) => {
-  //    const user = await db.query.users.findFirst();
+  callbacks: {
+    signIn: async ({ user: requestUser }) => {
+      const user = await db.query.users.findFirst();
 
-  //    if (!user) {
-  //      return true;
-  //    }
+      if (!user) {
+        return true;
+      }
 
-  //    if (user.email !== requestUser.email) {
-  //      return false;
-  //    }
+      if (user.email !== requestUser.email) {
+        return false;
+      }
 
-  //    return true;
-  //  },
-  //},
+      return true;
+    },
+  },
 };
