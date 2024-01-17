@@ -17,7 +17,7 @@ interface EditProps {
 const Edit: React.FC<EditProps> = async ({ params }) => {
   const email = await showEmailAction(params);
 
-  if (!email) {
+  if (!email || "message" in email) {
     return redirect("/");
   }
 

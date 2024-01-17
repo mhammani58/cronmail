@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { Button } from "@/client/components/ui/button";
 import { deleteEmailAction } from "@/server/controllers/email";
@@ -13,21 +13,30 @@ interface DeleteCardProps {
 export const DeleteCard: React.FC<DeleteCardProps> = ({ emailId }) => {
   const router = useRouter();
   const { mutate: deleteEmail, isPending } = useMutation({
-    mutationFn: deleteEmailAction
-  })
+    mutationFn: deleteEmailAction,
+  });
 
   const handleClick = () => {
-    deleteEmail({ emailId }, {
-      onSuccess: () => {
-        toast.success("Email deleted successfully");
-        router.push("/")
-        router.refresh()
-      },
-      onError: (err) => {
-        toast.error(err.message)
-      }
-    })
-  }
+    deleteEmail(
+      { emailId },
+      {
+        onSuccess: (data) => {
+          if ("message" in data) {
+            toast.error(data.message);
+            return;
+          }
 
-  return <Button isLoading={isPending} onClick={handleClick} variant="destructive">Delete</Button>
-}
+          toast.success("Email deleted successfully");
+          router.push("/");
+          router.refresh();
+        },
+      }
+    );
+  };
+
+  return (
+    <Button isLoading={isPending} onClick={handleClick} variant="destructive">
+      Delete
+    </Button>
+  );
+};

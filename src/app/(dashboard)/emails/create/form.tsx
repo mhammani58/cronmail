@@ -80,12 +80,14 @@ export const CreateForm = () => {
 
   const onSubmit = (data: CreateEmailPayload) => {
     createEmail(data, {
-      onSuccess: () => {
+      onSuccess: (data) => {
+        if ("message" in data) {
+          toast.error(data.message);
+          return;
+        }
+
         toast.success("Email created successfully");
         form.reset();
-      },
-      onError: (err) => {
-        toast.error(err.message);
       },
     });
   };

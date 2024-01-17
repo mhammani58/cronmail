@@ -3,11 +3,13 @@
 import { env } from "@/common/env.mjs";
 import { db } from "../database";
 import { createEmailSchema, updateEmailSchema } from "@/common/validations";
-import { eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { crons, emails } from "../database/schema";
 import { z } from "zod";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../lib/auth";
+import { createPortal } from "react-dom";
+import { timeStamp } from "console";
 
 const auth = <T extends Array<any>, U>(fn: (...args: T) => U) => {
   return async (...args: T) => {
@@ -17,7 +19,14 @@ const auth = <T extends Array<any>, U>(fn: (...args: T) => U) => {
       throw new Error("Unauthenticated");
     }
 
-    return await fn(...args);
+    try {
+      return await fn(...args);
+    } catch (err) {
+      const error = err as Error;
+      return {
+        message: error.message,
+      };
+    }
   };
 };
 
@@ -33,12 +42,25 @@ function subtractOneHour(hour: number) {
 interface CreateCronProps {
   hour: number;
   minute: number;
-  emailId: string;
 }
 
-const createCron = async ({ hour, minute, emailId }: CreateCronProps) => {
+const createCron = async ({ hour, minute }: CreateCronProps) => {
+  const cron = await db.query.crons.findFirst({
+    where: and(eq(crons.hour, hour), eq(crons.minute, minute)),
+  });
+
+  if (cron) {
+    return {
+      data: {
+        scheduleId: cron.cronId,
+      },
+      hour,
+      minute,
+    };
+  }
+
   const endpoint = new URL("/api/crons", env.NEXTAUTH_URL).toString();
-  const url = `https://qstash.upstash.io/v2/schedules/${endpoint}?emailId=${emailId}`;
+  const url = `https://qstash.upstash.io/v2/schedules/${endpoint}?hour=${hour}&minute=${minute}`;
 
   const newHour = subtractOneHour(hour);
 
@@ -60,7 +82,19 @@ const createCron = async ({ hour, minute, emailId }: CreateCronProps) => {
 };
 
 const deleteCron = async (id: string) => {
-  return await fetch(`https://qstash.upstash.io/v2/schedules/${id}`, {
+  const count = await db
+    .select({
+      count: sql<string>`COUNT(*)`,
+    })
+    .from(crons)
+    .where(eq(crons.cronId, id))
+    .then((counts) => counts[0].count);
+
+  if (parseInt(count) !== 1) {
+    return;
+  }
+
+  await fetch(`https://qstash.upstash.io/v2/schedules/${id}`, {
     method: "DELETE",
     headers: {
       Authorization: `Bearer ${env.QSTASH_TOKEN}`,
@@ -144,10 +178,7 @@ export const createEmailAction = auth(async (body: unknown) => {
   // wait for crons to be created
   const createdCrons = await Promise.allSettled(
     input.timestamps.map((timestamp) => {
-      return createCron({
-        ...timestamp,
-        emailId: email.id,
-      });
+      return createCron(timestamp);
     })
   );
 
@@ -229,7 +260,6 @@ export const updateEmailAction = auth(async (body: unknown) => {
       return createCron({
         hour: cron.hour,
         minute: cron.minute,
-        emailId: email.id,
       });
     })
   );
