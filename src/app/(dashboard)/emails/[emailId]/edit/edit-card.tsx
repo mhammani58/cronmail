@@ -92,7 +92,7 @@ export const EditCard: React.FC<EditCardProps> = ({ email }) => {
   const onSubmit = (data: UpdateEmailPayload) => {
     updateEmail(data, {
       onSuccess: (data) => {
-        if ("message" in data) {
+        if (data && "message" in data) {
           toast.error(data.message);
           return;
         }

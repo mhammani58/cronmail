@@ -81,7 +81,7 @@ export const CreateForm = () => {
   const onSubmit = (data: CreateEmailPayload) => {
     createEmail(data, {
       onSuccess: (data) => {
-        if ("message" in data) {
+        if (data && "message" in data) {
           toast.error(data.message);
           return;
         }

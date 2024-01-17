@@ -21,7 +21,7 @@ export const DeleteCard: React.FC<DeleteCardProps> = ({ emailId }) => {
       { emailId },
       {
         onSuccess: (data) => {
-          if ("message" in data) {
+          if (data && "message" in data) {
             toast.error(data.message);
             return;
           }
